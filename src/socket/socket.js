@@ -1,30 +1,32 @@
 const { io } = require('../app')
+const { TicketControl } = require('../classes/socket-control')
 
+const ticketControl = new TicketControl();
 io.on('connection',client =>{
-    console.log('Server connected');
     
-    client.on('disconnect',()=>{
-        console.log('Client disconnected');        
+    client.on('nextTicket',(data,callback)=>{
+        callback(ticketControl.nextTicket())
     })
 
-    //message received from client
-    client.on('sendMessage', (data,callback) =>{
-        console.log(data);
-        client.broadcast.emit('sendMessage',data);
-       /* if(data.user){
-            callback({
-                message : data
-            })
-        }else{
-            callback({
-                message : 'Upps algo salio mal'
-            })
-        }*/
+    client.emit('ultimateTicket',{
+        current : ticketControl.getUltimateTicket(),
+        ultimateFour : ticketControl.getUltimateFourTicket()
     })
 
-    //Send message client
-    client.emit('sendMessage',{
-        user : 'Admin',
-        message : 'Welcome admin'
+    client.on('attendTicket',(data,callback)=>{
+        if(!data.desktop){
+            callback({
+                ok : true,
+                message :'The desktop is  necesary'
+            })
+        }
+
+        let attend = ticketControl.attendTicket(data.desktop);
+        callback(attend);
+
     })
+    client.broadcast.emit('ultimate4',{
+        ultimateFour : ticketControl.getUltimateFourTicket()
+    })
+
 })
